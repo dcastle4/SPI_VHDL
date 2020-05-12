@@ -13,7 +13,17 @@ architecture RTL_SIM of SPI_SIM is
     signal internalSS: std_logic;
     signal internalSCK: std_logic;
     signal internalMOSI: std_logic;
+    signal internalMISO: std_logic;
     signal internalFinish: std_logic;
+    
+    procedure serializeMISO
+    (constant data: in std_logic_vector(23 downto 0);
+       signal MISO_out: out std_logic) is
+            
+    begin
+    end serializeMISO;
+    
+    
 begin
     
     internalClock <= not internalClock after 6.25 ns; --for 80MHz -> divided to 40MHz for serial clock
@@ -32,6 +42,11 @@ begin
         wait for 10 ms; -- wait for a long time (10ms)
     end process ENABLE_TEST;
     
+    MOSI_TEST: process is
+    begin
+    end process MISO_TEST;
+    
+    
     
     MY_SPI_MASTER: entity work.SPI_MASTER port map 
     (
@@ -42,6 +57,7 @@ begin
             ss_out => internalSS,
             sck_out => internalSCK,
             MOSI => internalMOSI,
+            MISO => internalMISO,
             wordFinished => internalFinish   
     );
 

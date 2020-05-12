@@ -21,7 +21,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 entity SPI_MASTER is
-    generic(clk_div: integer := 1);
+    generic(clk_div: integer := 1; packetSize: integer := 24);
     port(   clock: in std_logic;
             reset: in std_logic;
             txEnable: in std_logic;
@@ -30,6 +30,7 @@ entity SPI_MASTER is
             ss_out: out std_logic;
             sck_out: out std_logic;
             MOSI: out std_logic;
+            MISO: in std_logic;
             
             wordFinished: out std_logic
             
@@ -47,10 +48,12 @@ architecture RTL of SPI_MASTER is
     type states is (IDLE, DATA_VALID, DATA_SETUP);
     signal currentState: states := IDLE;
     
+    
     ----intermediate signals-----------------------------------SIGNALS
     signal ss_reg: std_logic := IDLE_HIGH;
     signal sck_reg: std_logic := IDLE_LOW;
     signal wordFinished_reg: std_logic := IDLE_LOW;
+    signal MISO_reg: std_logic_vector(packetSize downto 0);
 
     ----internal enable signal---------------------------------SIGNALS
     signal decrementEnable: std_logic;
@@ -71,19 +74,19 @@ begin
     --  Main State Machine Process
     --============================================================================
     STATE_MACHINE: process(reset, clock) is
-    variable count: integer range 24 downto 0;
+    variable count: integer range packetSize downto 0;
     begin 
         if(reset = ACTIVE_HIGH) then
             ss_reg <= IDLE_HIGH;
             decrementEnable <= IDLE_LOW;
             currentState <= IDLE;
             MOSI <= 'Z'; -- high impedence
-            count := 24;
+            count := packetSize;
         
         elsif(rising_edge(clock)) then
             case currentState is
                 when IDLE =>
-                    count := 24;
+                    count := packetSize;
                     ss_reg <= IDLE_HIGH;
                     MOSI <= 'Z';
                     if(txEnable = ACTIVE_HIGH) then
@@ -114,12 +117,13 @@ begin
                             if(txEnable = ACTIVE_HIGH) then
                                 currentState <= DATA_SETUP;
                                 decrementEnable <= ACTIVE_HIGH;
-                                count := 24;
+                                count := packetSize;
                             else
                                 currentState <= IDLE;
                                 decrementEnable <= IDLE_LOW;
                             end if;
                         else
+                            MISO_reg <= MISO_reg(packetSize-1 downto 0) & MISO; -- sample MISO and shift into register
                             currentState <= DATA_SETUP;
                             decrementEnable <= ACTIVE_HIGH;
                             wordFinished_reg <= IDLE_LOW;
