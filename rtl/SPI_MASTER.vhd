@@ -88,6 +88,7 @@ begin
                 when IDLE =>
                     count := packetSize;
                     ss_reg <= IDLE_HIGH;
+                    sck_reg <= IDLE_LOW;
                     MOSI <= 'Z';
                     if(txEnable = ACTIVE_HIGH) then
                         ss_reg <= ACTIVE_LOW;
@@ -109,6 +110,8 @@ begin
                             end if;
                      else
                         MOSI <= 'Z';
+                        ss_reg <= IDLE_HIGH;
+                        sck_reg <= IDLE_LOW;
                      end if;
                 when DATA_VALID =>
                     if(ss_reg = ACTIVE_LOW and sck_reg = IDLE_LOW) then
